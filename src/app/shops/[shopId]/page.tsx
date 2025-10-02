@@ -4,26 +4,32 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import Link from "next/link";
 import { Id } from "../../../../convex/_generated/dataModel";
-import { useCustomer } from "../../../hooks/useCustomer";
-import { useState } from "react";
+import { useAuth } from "../../../hooks/useAuth";
+import { useState, useEffect } from "react";
 import CustomerForm from "../../../components/CustomerForm";
 
-export default function ShopPage({ params }: { params: { shopId: string } }) {
-  const shopId = params.shopId as Id<"shops">;
-  const products = useQuery(api.products.getProductsByShop, { shopId });
-  const { customerId } = useCustomer();
+export default function ShopPage({ params }: { params: Promise<{ shopId: string }> }) {
+  const [shopId, setShopId] = useState<Id<"shops"> | null>(null);
+  
+  useEffect(() => {
+    params.then(resolvedParams => {
+      setShopId(resolvedParams.shopId as Id<"shops">);
+    });
+  }, [params]);
+  
+  const products = useQuery(api.products.getProductsByShop, shopId ? { shopId } : "skip");
+  const { user, signIn } = useAuth();
   const addToBasket = useMutation(api.baskets.addToBasket);
-  const createCustomer = useMutation(api.customers.createCustomer);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
 
   const handleAddToBasket = async (productId: Id<"products">) => {
-    if (!customerId) {
-      setShowCustomerForm(true);
+    if (!user) {
+      await signIn();
       return;
     }
 
     await addToBasket({
-      customerId,
+      userId: user._id,
       productId,
       count: 1
     });

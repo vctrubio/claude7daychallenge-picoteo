@@ -9,10 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@convex-dev/auth": "^0.0.90",
+    "@hookform/resolvers": "^5.2.2",
     "convex": "^1.27.3",
     "next": "15.5.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.63.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

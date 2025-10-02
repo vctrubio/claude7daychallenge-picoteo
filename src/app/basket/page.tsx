@@ -3,29 +3,37 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
-import { useCustomer } from "../../hooks/useCustomer";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function BasketPage() {
-  const { customerId } = useCustomer();
+  console.log("dev:BasketPage:render - Basket page rendering");
+  
+  const { user, signIn, isAuthenticated } = useAuth();
   const basket = useQuery(
     api.baskets.getBasket,
-    customerId ? { customerId } : "skip"
+    user ? { userId: user._id } : "skip"
   );
 
-  if (!customerId) {
+  console.log("dev:BasketPage:state", { 
+    user: user?._id, 
+    isAuthenticated, 
+    basketItems: basket?.products?.length 
+  });
+
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Your Basket</h1>
-          <p className="text-gray-600">
-            Please add items to your basket first by visiting a shop.
+          <p className="text-gray-600 mb-4">
+            Please sign in to view your basket.
           </p>
-          <Link 
-            href="/shops" 
-            className="inline-block mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          <button
+            onClick={signIn}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
-            Browse Shops
-          </Link>
+            Enter to Shop
+          </button>
         </div>
       </div>
     );
@@ -42,7 +50,7 @@ export default function BasketPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Your Basket</h1>
           <p className="text-gray-600 mb-4">Your basket is empty.</p>
           <Link 
-            href="/shops" 
+            href="/" 
             className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             Browse Shops
@@ -60,7 +68,7 @@ export default function BasketPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <header className="mb-8">
-          <Link href="/shops" className="text-blue-600 hover:underline mb-4 inline-block">
+          <Link href="/" className="text-blue-600 hover:underline mb-4 inline-block">
             ← Continue Shopping
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Basket</h1>

@@ -3,21 +3,21 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
-import { useCustomer } from "../../hooks/useCustomer";
+import { useAuth } from "../../hooks/useAuth";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
-  const { customerId } = useCustomer();
+  const { user } = useAuth();
   const router = useRouter();
   const basket = useQuery(
     api.baskets.getBasket,
-    customerId ? { customerId } : "skip"
+    user ? { userId: user._id } : "skip"
   );
   const createOrder = useMutation(api.orders.createOrder);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  if (!customerId) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
@@ -69,7 +69,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     try {
       await createOrder({
-        customerId,
+        userId: user._id,
         basketId: basket._id,
         shopId,
         totalPriceToPay: totalPrice,

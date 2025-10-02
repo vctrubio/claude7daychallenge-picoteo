@@ -1,9 +1,29 @@
 import { mutation } from "./_generated/server";
+import { v } from "convex/values";
 
 export const seedDatabase = mutation({
   args: {},
   handler: async (ctx) => {
+    // Create users with owner role
+    const user1 = await ctx.db.insert("users", {
+      name: "John Smith",
+      email: "john@example.com",
+      phone: "+1234567890",
+      role: "owner",
+      createdAt: Date.now(),
+    });
+
+    const user2 = await ctx.db.insert("users", {
+      name: "Jane Doe",
+      email: "jane@example.com",
+      phone: "+1234567891",
+      role: "owner",
+      createdAt: Date.now(),
+    });
+
+    // Create owner records linked to users
     const owner1 = await ctx.db.insert("owners", {
+      userId: user1,
       name: "John Smith",
       email: "john@example.com",
       phone: "+1234567890",
@@ -11,6 +31,7 @@ export const seedDatabase = mutation({
     });
 
     const owner2 = await ctx.db.insert("owners", {
+      userId: user2,
       name: "Jane Doe",
       email: "jane@example.com",
       phone: "+1234567891",
@@ -88,5 +109,25 @@ export const seedDatabase = mutation({
     });
 
     return "Database seeded successfully!";
+  },
+});
+
+export const clearDatabase = mutation({
+  args: {
+    tables: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const validTables = ["users", "owners", "shops", "products", "customers", "baskets", "orders"];
+    const tablesToClear = args.tables.length === 0 ? validTables : args.tables.filter(table => validTables.includes(table));
+    
+    for (const tableName of tablesToClear) {
+      const records = await ctx.db.query(tableName as any).collect();
+      for (const record of records) {
+        await ctx.db.delete(record._id);
+      }
+      console.log(`Cleared ${records.length} records from ${tableName} table`);
+    }
+    
+    return `Database cleared: ${tablesToClear.join(", ")}`;
   },
 });

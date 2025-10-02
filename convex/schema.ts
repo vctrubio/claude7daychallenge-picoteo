@@ -1,8 +1,20 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
+  ...authTables,
+  
+  users: defineTable({
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    role: v.union(v.literal("customer"), v.literal("owner")),
+    createdAt: v.number(),
+  }),
   owners: defineTable({
+    userId: v.id("users"),
     name: v.string(),
     email: v.string(),
     phone: v.string(),
@@ -35,7 +47,7 @@ export default defineSchema({
   }),
 
   baskets: defineTable({
-    customerId: v.id("customers"),
+    userId: v.id("users"),
     products: v.array(v.object({
       productId: v.id("products"),
       count: v.number(),
@@ -44,7 +56,7 @@ export default defineSchema({
   }),
 
   orders: defineTable({
-    customerId: v.id("customers"),
+    userId: v.id("users"),
     basketId: v.id("baskets"),
     shopId: v.id("shops"),
     status: v.union(v.literal("proceeding"), v.literal("complete")),

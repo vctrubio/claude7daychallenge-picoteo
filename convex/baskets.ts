@@ -3,14 +3,14 @@ import { v } from "convex/values";
 
 export const addToBasket = mutation({
   args: { 
-    customerId: v.id("customers"),
+    userId: v.id("users"),
     productId: v.id("products"),
     count: v.number()
   },
   handler: async (ctx, args) => {
     const existingBasket = await ctx.db
       .query("baskets")
-      .filter((q) => q.eq(q.field("customerId"), args.customerId))
+      .filter((q) => q.eq(q.field("userId"), args.userId))
       .first();
 
     if (existingBasket) {
@@ -32,7 +32,7 @@ export const addToBasket = mutation({
       }
     } else {
       await ctx.db.insert("baskets", {
-        customerId: args.customerId,
+        userId: args.userId,
         products: [{ productId: args.productId, count: args.count }],
         finalPrice: 0
       });
@@ -41,11 +41,11 @@ export const addToBasket = mutation({
 });
 
 export const getBasket = query({
-  args: { customerId: v.id("customers") },
+  args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const basket = await ctx.db
       .query("baskets")
-      .filter((q) => q.eq(q.field("customerId"), args.customerId))
+      .filter((q) => q.eq(q.field("userId"), args.userId))
       .first();
 
     if (!basket) return null;
