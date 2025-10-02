@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
+import { toast } from "sonner";
 
 export function useAuth() {
   console.log("dev:useAuth:hook - initializing auth hook");
@@ -33,11 +34,17 @@ export function useAuth() {
   const signIn = async () => {
     console.log("dev:useAuth:signIn - attempting sign in", { currentUserId });
     if (!currentUserId) {
-      console.log("dev:useAuth:signIn - creating new user");
-      const newUserId = await createUser({ role: "customer" });
-      console.log("dev:useAuth:signIn - new user created:", newUserId);
-      localStorage.setItem("picoteoUserId", newUserId);
-      setCurrentUserId(newUserId);
+      try {
+        console.log("dev:useAuth:signIn - creating new user");
+        const newUserId = await createUser({ role: "customer" });
+        console.log("dev:useAuth:signIn - new user created:", newUserId);
+        localStorage.setItem("picoteoUserId", newUserId);
+        setCurrentUserId(newUserId);
+        toast.success("Welcome to Picoteo!");
+      } catch (error) {
+        console.error("dev:useAuth:signIn - error creating user:", error);
+        toast.error("Cannot connect to Convex. Please check if the server is running.");
+      }
     } else {
       console.log("dev:useAuth:signIn - user already exists, skipping creation");
     }

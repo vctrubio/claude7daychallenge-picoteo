@@ -4,6 +4,7 @@ import { ConvexProvider } from "./ConvexProvider";
 import Navbar from "../components/Navbar";
 import RouteNav from "../components/RouteNav";
 import SeedNavBar from "../components/SeedNavBar";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "E-commerce MVP",
@@ -23,6 +24,7 @@ export default function RootLayout({
           <SeedNavBar />
           <Navbar />
           {children}
+          <Toaster />
         </ConvexProvider>
       </body>
     </html>
