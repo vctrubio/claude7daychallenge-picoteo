@@ -7,8 +7,8 @@ import SeedNavBar from "../components/SeedNavBar";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "E-commerce MVP",
-  description: "A simple e-commerce MVP built with Next.js and Convex",
+  title: "Picoteo | Local Marketplace",
+  description: "A marketplace that empowers local communities to sell their harvests, securing pre-sales even before the first pick.",
 };
 
 export default function RootLayout({
