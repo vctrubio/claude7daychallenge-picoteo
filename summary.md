@@ -1,5 +1,9 @@
 # Claude Code Session Summary
 
+**Model Used:** Claude Sonnet 4 (claude-sonnet-4-20250514)  
+**Token Usage:** Approximately 25,000+ tokens (multi-turn conversation with file reads/edits)  
+**Session Duration:** ~1 hour of active development
+
 ## Schema & Architecture Fixes
 • **Fixed infinite redirect bug** - Resolved loop between home/business pages when changing user roles
 • **Database schema restructure** - Changed shops to reference `ownerId` instead of `userId` for proper hierarchy
@@ -35,3 +39,8 @@
 • **Authentication system** - Role-based access with proper state management
 • **Form validation** - Zod schemas with React Hook Form integration
 • **Development efficiency** - Tools for rapid testing and data management
+
+## Next Steps / TODOs
+• **Fix schema overlap** - Restructure owners table to eliminate data duplication with users
+• **Add business fields** - Include NIF (National Identifier), business status (active, blocked, deleted)
+• **Remove customers table** - Consolidate with users table for cleaner architecture
