@@ -1,0 +1,54 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  owners: defineTable({
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    createdAt: v.number(),
+  }),
+
+  shops: defineTable({
+    ownerId: v.id("owners"),
+    name: v.string(),
+    description: v.string(),
+    address: v.string(),
+    createdAt: v.number(),
+  }),
+
+  products: defineTable({
+    shopId: v.id("shops"),
+    name: v.string(),
+    basePricePerUnit: v.number(),
+    unit: v.string(),
+    inStock: v.boolean(),
+    createdAt: v.number(),
+  }),
+
+  customers: defineTable({
+    name: v.string(),
+    phone: v.string(),
+    email: v.string(),
+    address: v.string(),
+    createdAt: v.number(),
+  }),
+
+  baskets: defineTable({
+    customerId: v.id("customers"),
+    products: v.array(v.object({
+      productId: v.id("products"),
+      count: v.number(),
+    })),
+    finalPrice: v.number(),
+  }),
+
+  orders: defineTable({
+    customerId: v.id("customers"),
+    basketId: v.id("baskets"),
+    shopId: v.id("shops"),
+    status: v.union(v.literal("proceeding"), v.literal("complete")),
+    totalPriceToPay: v.number(),
+    createdAt: v.number(),
+  }),
+});
