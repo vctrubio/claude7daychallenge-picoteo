@@ -15,11 +15,12 @@ export default defineSchema({
   }),
   owners: defineTable({
     userId: v.id("users"),
-    name: v.string(),
-    email: v.string(),
-    phone: v.string(),
+    username: v.string(),
+    nif: v.string(),
+    stripeAccountId: v.optional(v.string()),
+    whatsappApiTlf: v.string(),
     createdAt: v.number(),
-  }),
+  }).index("by_username", ["username"]).index("by_nif", ["nif"]),
 
   shops: defineTable({
     ownerId: v.id("owners"),
@@ -38,13 +39,6 @@ export default defineSchema({
     createdAt: v.number(),
   }),
 
-  customers: defineTable({
-    name: v.string(),
-    phone: v.string(),
-    email: v.string(),
-    address: v.string(),
-    createdAt: v.number(),
-  }),
 
   baskets: defineTable({
     userId: v.id("users"),

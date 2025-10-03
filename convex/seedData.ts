@@ -11,7 +11,7 @@ export const seedDatabase = mutation({
       const ownerUser = await ctx.db.insert("users", {
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        phone: faker.phone.number("+1##########"),
+        phone: faker.phone.number(),
         address: faker.location.streetAddress({ useFullAddress: true }),
         role: "owner",
         createdAt: Date.now() - faker.number.int({ min: 1000000, max: 10000000 }),
@@ -25,7 +25,7 @@ export const seedDatabase = mutation({
       const customerUser = await ctx.db.insert("users", {
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        phone: faker.phone.number("+1##########"),
+        phone: faker.phone.number(),
         address: faker.location.streetAddress({ useFullAddress: true }),
         role: "customer",
         createdAt: Date.now() - faker.number.int({ min: 1000000, max: 10000000 }),
@@ -38,9 +38,9 @@ export const seedDatabase = mutation({
     for (const ownerUser of ownerUsers) {
       const owner = await ctx.db.insert("owners", {
         userId: ownerUser,
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        phone: faker.phone.number("+1##########"),
+        username: faker.internet.userName().toLowerCase(),
+        nif: `${faker.number.int({ min: 10000000, max: 99999999 })}A`, // Spanish NIF format
+        whatsappApiTlf: faker.phone.number(),
         createdAt: Date.now() - faker.number.int({ min: 1000000, max: 10000000 }),
       });
       owners.push(owner);

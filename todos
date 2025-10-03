@@ -1,0 +1,9 @@
+1. change owner schema
+2. handle order trasnaction between parties
+3. remove customer table ... 
+4. migrate basket schema, to include shopid
+5. order has basketId, OwnerId, UserId, totalPriceToPay, 
+6. one basket per shop. Only one basket can exist. 
+
+7. integrate handletransaction with stripe
+8. handle shipping to

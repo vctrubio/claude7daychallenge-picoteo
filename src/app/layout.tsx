@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ConvexProvider } from "./ConvexProvider";
+import { ConvexProvider } from "../contexts/ConvexProvider";
 import { AuthUserProvider } from "../contexts/AuthUserProvider";
 import Navbar from "../components/Navbar";
 import RouteNav from "../components/RouteNav";
@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <ConvexProvider>
           <AuthUserProvider>

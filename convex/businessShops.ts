@@ -24,12 +24,22 @@ export const createShop = mutation({
       // Create owner record if it doesn't exist
       const ownerId = await ctx.db.insert("owners", {
         userId: args.userId,
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
+        username: user.name?.toLowerCase().replace(/\s+/g, '') || `user${args.userId.slice(-6)}`,
+        nif: `temp-${args.userId.slice(-8)}`, // Temporary NIF, should be updated by owner
+        whatsappApiTlf: user.phone || "",
         createdAt: Date.now(),
       });
       owner = await ctx.db.get(ownerId);
+    }
+
+    // Check if owner already has a shop (one shop per owner limit)
+    const existingShop = await ctx.db
+      .query("shops")
+      .filter((q) => q.eq(q.field("ownerId"), owner!._id))
+      .first();
+    
+    if (existingShop) {
+      throw new Error("Owner can only have one shop. Please edit your existing shop instead.");
     }
     
     return await ctx.db.insert("shops", {

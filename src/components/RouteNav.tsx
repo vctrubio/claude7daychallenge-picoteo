@@ -4,12 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const routes = [
-  { path: "/", label: "Home", description: "Customer marketplace view" },
-  { path: "/shops", label: "Shops", description: "All shops listing" },
-  { path: "/order-confirmation", label: "Confirmation", description: "Order confirmation" },
-  { path: "/order-success", label: "Success", description: "Order success" },
-  { path: "/profile", label: "Profile", description: "User profile and settings" },
-  { path: "/business", label: "Business", description: "Owner dashboard" },
+  { path: "/", label: "Home", description: "Landing page with all shops" },
+  { path: "/checkout", label: "Checkout", description: "Order checkout process" },
 ];
 
 export default function RouteNav() {

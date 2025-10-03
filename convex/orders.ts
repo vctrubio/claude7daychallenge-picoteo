@@ -61,7 +61,7 @@ export const getOrder = query({
       ctx.db.get(order.shopId)
     ]);
 
-    let basketProducts = [];
+    let basketProducts: any[] = [];
     
     // Handle new orders with products field
     if (order.products && order.products.length > 0) {
@@ -113,7 +113,7 @@ export const getUserOrders = query({
       orders.map(async (order) => {
         const shop = await ctx.db.get(order.shopId);
 
-        let basketProducts = [];
+        let basketProducts: any[] = [];
         
         // Handle new orders with products field
         if (order.products && order.products.length > 0) {
@@ -152,5 +152,32 @@ export const getUserOrders = query({
     );
 
     return ordersWithDetails;
+  },
+});
+
+export const createPickupOrder = mutation({
+  args: {
+    userId: v.id("users"),
+    ownerId: v.id("owners"),
+    shopId: v.id("shops"),
+    products: v.array(v.object({
+      productId: v.id("products"),
+      count: v.number(),
+    })),
+    totalPriceToPay: v.number(),
+    orderType: v.union(v.literal("pickup"), v.literal("delivery")),
+  },
+  handler: async (ctx, args) => {
+    const orderId = await ctx.db.insert("orders", {
+      userId: args.userId,
+      basketId: null as any, // We'll create a temporary basket reference
+      shopId: args.shopId,
+      products: args.products,
+      status: "proceeding",
+      totalPriceToPay: args.totalPriceToPay,
+      createdAt: Date.now(),
+    });
+
+    return orderId;
   },
 });

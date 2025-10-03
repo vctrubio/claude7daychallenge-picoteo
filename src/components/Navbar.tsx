@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useAuth } from "../hooks/useAuth";
-import BasketPopover from "./BasketPopover";
 
 const useNavbarLogic = () => {
   console.log("dev:Navbar:hook - initializing navbar logic");
@@ -67,15 +66,6 @@ const NavigationLinks = ({
   onBusinessClick: () => void;
 }) => (
   <>
-    {isOwner && (
-      <Link 
-        href="/business" 
-        onClick={onBusinessClick}
-        className="bg-neutral-700 text-white px-4 py-2 rounded-lg hover:bg-neutral-800 transition-colors"
-      >
-        Business
-      </Link>
-    )}
   </>
 );
 
@@ -133,7 +123,6 @@ export default function Navbar() {
                   isOwner={isOwner}
                   onBusinessClick={handleBusinessClick}
                 />
-                {!isOwner && <BasketPopover />}
               </>
             )}
             

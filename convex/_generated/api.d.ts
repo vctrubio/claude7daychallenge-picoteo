@@ -16,8 +16,8 @@ import type {
 import type * as auth from "../auth.js";
 import type * as baskets from "../baskets.js";
 import type * as businessShops from "../businessShops.js";
-import type * as customers from "../customers.js";
 import type * as orders from "../orders.js";
+import type * as owners from "../owners.js";
 import type * as products from "../products.js";
 import type * as seedData from "../seedData.js";
 import type * as shops from "../shops.js";
@@ -35,8 +35,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   baskets: typeof baskets;
   businessShops: typeof businessShops;
-  customers: typeof customers;
   orders: typeof orders;
+  owners: typeof owners;
   products: typeof products;
   seedData: typeof seedData;
   shops: typeof shops;

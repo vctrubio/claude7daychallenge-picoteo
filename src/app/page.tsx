@@ -2,17 +2,23 @@
 
 import Link from "next/link";
 import { useAuth } from "../hooks/useAuth";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const useHomePageLogic = () => {
   console.log("dev:HomePage:hook - initializing home page logic");
   
   const { user, signIn, isAuthenticated, isOwner } = useAuth();
+  
+  // Get all shops with their owners
+  const shopsWithOwners = useQuery(api.shops.getAllShopsWithOwners);
 
   console.log("dev:HomePage:state", { 
     user: user?._id, 
     isAuthenticated, 
     isOwner,
-    userRole: user?.role 
+    userRole: user?.role,
+    shopsCount: shopsWithOwners?.length 
   });
 
   const handleGetStarted = () => {
@@ -25,6 +31,7 @@ const useHomePageLogic = () => {
     isAuthenticated,
     isOwner,
     handleGetStarted,
+    shopsWithOwners,
   };
 };
 
@@ -172,35 +179,67 @@ const AuthenticatedBanner = ({ user, isOwner }: { user: any; isOwner: boolean })
   <div className="bg-gradient-to-r from-emerald-600 to-neutral-700 py-12">
     <div className="max-w-6xl mx-auto px-6">
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Welcome back, {user.name || "Friend"}!
-            </h2>
-            <p className="text-emerald-100 text-lg">
-              {isOwner 
-                ? "Manage your business and reach more customers" 
-                : "Discover fresh products from local businesses"
-              }
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/profile"
-              className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-medium hover:bg-white/30 transition-colors border border-white/20"
-            >
-              Edit Profile
-            </Link>
-            <Link
-              href={isOwner ? "/business" : "/shops"}
-              className="bg-white text-neutral-700 px-6 py-3 rounded-lg font-medium hover:bg-neutral-50 transition-colors shadow-lg"
-            >
-              {isOwner ? "Business Dashboard" : "Browse Shops"}
-            </Link>
-          </div>
+        <div className="text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            Welcome back, {user.name || "Friend"}!
+          </h2>
+          <p className="text-emerald-100 text-lg">
+            {isOwner 
+              ? "Manage your business and reach more customers" 
+              : "Discover fresh products from local businesses"
+            }
+          </p>
         </div>
       </div>
+    </div>
+  </div>
+);
+
+const ShopsSection = ({ shopsWithOwners }: { shopsWithOwners: any[] | undefined }) => (
+  <div className="py-20 bg-white">
+    <div className="max-w-7xl mx-auto px-6">
+      <div className="text-center mb-16">
+        <h2 className="text-4xl font-bold text-gray-900 mb-4">Local Shops</h2>
+        <p className="text-xl text-gray-600">Discover amazing local businesses in your community</p>
+      </div>
+      
+      {!shopsWithOwners ? (
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading shops...</p>
+        </div>
+      ) : shopsWithOwners.length === 0 ? (
+        <div className="text-center">
+          <p className="text-gray-600">No shops available yet.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {shopsWithOwners.map((shopData) => (
+            <Link
+              key={shopData.shop._id}
+              href={`/${shopData.owner.username}`}
+              className="group block bg-white rounded-xl p-6 shadow-sm border border-neutral-100 hover:shadow-lg hover:border-neutral-200 transition-all duration-300"
+            >
+              <div className="mb-4">
+                <h3 className="font-bold text-xl text-neutral-900 group-hover:text-emerald-600 transition-colors mb-2">
+                  {shopData.shop.name}
+                </h3>
+                <p className="text-neutral-600 text-sm mb-2">{shopData.shop.description}</p>
+                <p className="text-xs text-neutral-500">{shopData.shop.address}</p>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-emerald-600 font-medium">
+                  @{shopData.owner.username}
+                </span>
+                <span className="text-xs text-neutral-400">
+                  Visit shop →
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -213,6 +252,7 @@ export default function HomePage() {
     isAuthenticated,
     isOwner,
     handleGetStarted,
+    shopsWithOwners,
   } = useHomePageLogic();
 
   return (
@@ -225,6 +265,7 @@ export default function HomePage() {
         <UnauthenticatedBanner onGetStarted={handleGetStarted} />
       )}
       
+      <ShopsSection shopsWithOwners={shopsWithOwners} />
       <HowItWorksSection />
       <FeaturesSection />
       

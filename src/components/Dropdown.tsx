@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, ReactNode } from "react";
 
 interface DropdownProps {
   trigger: ReactNode;
-  children: ReactNode;
+  children: ReactNode | (({ closeDropdown }: { closeDropdown: () => void }) => ReactNode);
   align?: "left" | "right";
   disabled?: boolean;
 }
