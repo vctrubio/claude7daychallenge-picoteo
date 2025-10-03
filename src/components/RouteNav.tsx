@@ -6,9 +6,8 @@ import { usePathname } from "next/navigation";
 const routes = [
   { path: "/", label: "Home", description: "Customer marketplace view" },
   { path: "/shops", label: "Shops", description: "All shops listing" },
-  { path: "/basket", label: "Basket", description: "Shopping basket" },
-  { path: "/checkout", label: "Checkout", description: "Checkout process" },
-  { path: "/order-success", label: "Success", description: "Order confirmation" },
+  { path: "/order-confirmation", label: "Confirmation", description: "Order confirmation" },
+  { path: "/order-success", label: "Success", description: "Order success" },
   { path: "/profile", label: "Profile", description: "User profile and settings" },
   { path: "/business", label: "Business", description: "Owner dashboard" },
 ];

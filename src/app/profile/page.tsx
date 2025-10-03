@@ -1,13 +1,15 @@
 "use client";
 
 import { useAuth } from "../../hooks/useAuth";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import OrderCard from "../../components/OrderCard";
+import { Building2, User, ToggleLeft, ToggleRight } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
@@ -24,6 +26,9 @@ const useProfileLogic = () => {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<"idle" | "success" | "error">("idle");
+  const [viewMode, setViewMode] = useState<"orders" | "shops">("orders");
+  
+  const orders = useQuery(api.orders.getUserOrders, user ? { userId: user._id } : "skip");
 
   const {
     register,
@@ -84,8 +89,82 @@ const useProfileLogic = () => {
     updateStatus,
     onSubmit,
     router,
+    orders,
+    viewMode,
+    setViewMode,
   };
 };
+
+const BusinessToggle = ({ user, viewMode, setViewMode }: { user: any; viewMode: string; setViewMode: (mode: "orders" | "shops") => void }) => {
+  if (user?.role !== "owner") return null;
+  
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-100 mb-6">
+      <div className="flex items-center justify-center gap-4">
+        <button
+          onClick={() => setViewMode("orders")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === "orders" 
+              ? "bg-emerald-100 text-emerald-700" 
+              : "text-neutral-600 hover:text-neutral-900"
+          }`}
+        >
+          <User className="w-4 h-4" />
+          My Orders
+        </button>
+        <button
+          onClick={() => setViewMode("shops")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === "shops" 
+              ? "bg-emerald-100 text-emerald-700" 
+              : "text-neutral-600 hover:text-neutral-900"
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          My Shops
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const OrdersSection = ({ orders }: { orders: any[] | undefined }) => {
+  if (!orders) {
+    return (
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-neutral-100 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+        <p className="text-neutral-600">Loading orders...</p>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-neutral-100 text-center">
+        <h3 className="text-lg font-semibold text-neutral-900 mb-2">No orders yet</h3>
+        <p className="text-neutral-600">Start shopping to see your orders here!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold text-neutral-900 mb-4">Order History</h2>
+      <div className="grid gap-4">
+        {orders.map((order) => (
+          <OrderCard key={order._id} order={order} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ShopsSection = () => (
+  <div className="bg-white rounded-xl p-8 shadow-sm border border-neutral-100 text-center">
+    <h3 className="text-lg font-semibold text-neutral-900 mb-2">Shop Management</h3>
+    <p className="text-neutral-600">Shop management features coming soon!</p>
+  </div>
+);
 
 const AvatarPlaceholder = ({ name, role }: { name: string; role: string }) => (
   <div className="relative">
@@ -117,7 +196,7 @@ const ProfileCard = ({
   updateStatus: string;
   onSubmit: (e: React.FormEvent) => void;
 }) => (
-  <div className="bg-white rounded-xl shadow-xl overflow-hidden max-w-md mx-auto">
+  <div className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
     {/* Header */}
     <div className="bg-gradient-to-r from-neutral-700 to-neutral-900 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -272,6 +351,9 @@ export default function ProfilePage() {
     updateStatus,
     onSubmit,
     router,
+    orders,
+    viewMode,
+    setViewMode,
   } = useProfileLogic();
 
   if (!isAuthenticated) {
@@ -304,21 +386,35 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your personal information</p>
+          <p className="text-gray-600">Manage your personal information and view your activity</p>
         </div>
 
-        <ProfileCard
-          user={user}
-          register={register}
-          errors={errors}
-          isDirty={isDirty}
-          isUpdating={isUpdating}
-          updateStatus={updateStatus}
-          onSubmit={handleSubmit(onSubmit)}
-        />
+        <BusinessToggle user={user} viewMode={viewMode} setViewMode={setViewMode} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <ProfileCard
+              user={user}
+              register={register}
+              errors={errors}
+              isDirty={isDirty}
+              isUpdating={isUpdating}
+              updateStatus={updateStatus}
+              onSubmit={handleSubmit(onSubmit)}
+            />
+          </div>
+          
+          <div>
+            {viewMode === "orders" ? (
+              <OrdersSection orders={orders} />
+            ) : (
+              <ShopsSection />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

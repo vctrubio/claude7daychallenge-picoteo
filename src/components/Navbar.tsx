@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "../hooks/useAuth";
+import BasketPopover from "./BasketPopover";
 
 const useNavbarLogic = () => {
   console.log("dev:Navbar:hook - initializing navbar logic");
@@ -132,6 +133,7 @@ export default function Navbar() {
                   isOwner={isOwner}
                   onBusinessClick={handleBusinessClick}
                 />
+                {!isOwner && <BasketPopover />}
               </>
             )}
             

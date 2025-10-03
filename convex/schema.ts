@@ -61,6 +61,10 @@ export default defineSchema({
     shopId: v.id("shops"),
     status: v.union(v.literal("proceeding"), v.literal("complete")),
     totalPriceToPay: v.number(),
+    products: v.array(v.object({
+      productId: v.id("products"),
+      count: v.number(),
+    })),
     createdAt: v.number(),
   }),
 });

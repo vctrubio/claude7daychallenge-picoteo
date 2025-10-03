@@ -40,6 +40,74 @@ export const addToBasket = mutation({
   },
 });
 
+export const updateBasketItem = mutation({
+  args: { 
+    userId: v.id("users"),
+    productId: v.id("products"),
+    count: v.number()
+  },
+  handler: async (ctx, args) => {
+    const basket = await ctx.db
+      .query("baskets")
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .first();
+
+    if (!basket) return;
+
+    const updatedProducts = basket.products.map(item => 
+      item.productId === args.productId 
+        ? { ...item, count: args.count }
+        : item
+    );
+
+    await ctx.db.patch(basket._id, {
+      products: updatedProducts
+    });
+  },
+});
+
+export const removeFromBasket = mutation({
+  args: { 
+    userId: v.id("users"),
+    productId: v.id("products")
+  },
+  handler: async (ctx, args) => {
+    const basket = await ctx.db
+      .query("baskets")
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .first();
+
+    if (!basket) return;
+
+    const updatedProducts = basket.products.filter(item => 
+      item.productId !== args.productId
+    );
+
+    await ctx.db.patch(basket._id, {
+      products: updatedProducts
+    });
+  },
+});
+
+export const clearBasket = mutation({
+  args: { 
+    userId: v.id("users")
+  },
+  handler: async (ctx, args) => {
+    const basket = await ctx.db
+      .query("baskets")
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .first();
+
+    if (!basket) return;
+
+    await ctx.db.patch(basket._id, {
+      products: [],
+      finalPrice: 0
+    });
+  },
+});
+
 export const getBasket = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -53,9 +121,10 @@ export const getBasket = query({
     const basketWithProducts = await Promise.all(
       basket.products.map(async (item) => {
         const product = await ctx.db.get(item.productId);
+        const shop = product ? await ctx.db.get(product.shopId) : null;
         return {
           ...item,
-          product
+          product: product ? { ...product, shop } : null
         };
       })
     );

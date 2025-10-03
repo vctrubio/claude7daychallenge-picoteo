@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ConvexProvider } from "./ConvexProvider";
+import { AuthUserProvider } from "../contexts/AuthUserProvider";
 import Navbar from "../components/Navbar";
 import RouteNav from "../components/RouteNav";
 import SeedNavBar from "../components/SeedNavBar";
@@ -20,11 +21,13 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ConvexProvider>
-          <RouteNav />
-          <SeedNavBar />
-          <Navbar />
-          {children}
-          <Toaster />
+          <AuthUserProvider>
+            <RouteNav />
+            <SeedNavBar />
+            <Navbar />
+            {children}
+            <Toaster />
+          </AuthUserProvider>
         </ConvexProvider>
       </body>
     </html>

@@ -2,11 +2,78 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import Link from "next/link";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { useAuth } from "../../../hooks/useAuth";
 import { useState, useEffect } from "react";
-import CustomerForm from "../../../components/CustomerForm";
+import ProductCard from "../../../components/ProductCard";
+import { MapPin, ArrowLeft, Package } from "lucide-react";
+import Link from "next/link";
+
+const useShopPageLogic = (shopId: Id<"shops"> | null) => {
+  const { user, signIn } = useAuth();
+  const products = useQuery(api.products.getProductsByShop, shopId ? { shopId } : "skip");
+  const shop = useQuery(api.shops.getShop, shopId ? { shopId } : "skip");
+  const addToBasket = useMutation(api.baskets.addToBasket);
+
+  const handleAddToBasket = async (productId: Id<"products">, quantity: number = 1) => {
+    if (!user) {
+      await signIn();
+      return;
+    }
+
+    await addToBasket({
+      userId: user._id,
+      productId,
+      count: quantity
+    });
+  };
+
+  return {
+    products,
+    shop,
+    handleAddToBasket,
+    isLoading: products === undefined || shop === undefined
+  };
+};
+
+const LoadingState = () => (
+  <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+      <p className="text-black/60 text-sm">Loading</p>
+    </div>
+  </div>
+);
+
+const ShopHeader = ({ shop }: { shop: any }) => (
+  <div className="pb-16">
+    <Link 
+      href="/shops" 
+      className="inline-flex items-center gap-2 text-black/60 hover:text-black transition-colors mb-8 group text-sm"
+    >
+      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+      Marketplace
+    </Link>
+    
+    <div className="max-w-2xl">
+      <h1 className="text-5xl font-light text-black mb-4 tracking-tight">{shop.name}</h1>
+      <div className="flex items-center text-black/60 mb-6 text-sm">
+        <MapPin className="w-4 h-4 mr-2" />
+        <span>{shop.address}</span>
+      </div>
+      <p className="text-black/80 text-lg leading-relaxed font-light">
+        {shop.description}
+      </p>
+    </div>
+  </div>
+);
+
+const EmptyProductsState = () => (
+  <div className="text-center py-24">
+    <h3 className="text-2xl font-light text-black mb-4">No products available</h3>
+    <p className="text-black/60">This shop hasn't added any products yet.</p>
+  </div>
+);
 
 export default function ShopPage({ params }: { params: Promise<{ shopId: string }> }) {
   const [shopId, setShopId] = useState<Id<"shops"> | null>(null);
@@ -17,79 +84,30 @@ export default function ShopPage({ params }: { params: Promise<{ shopId: string 
     });
   }, [params]);
   
-  const products = useQuery(api.products.getProductsByShop, shopId ? { shopId } : "skip");
-  const { user, signIn } = useAuth();
-  const addToBasket = useMutation(api.baskets.addToBasket);
-  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const { products, shop, handleAddToBasket, isLoading } = useShopPageLogic(shopId);
 
-  const handleAddToBasket = async (productId: Id<"products">) => {
-    if (!user) {
-      await signIn();
-      return;
-    }
-
-    await addToBasket({
-      userId: user._id,
-      productId,
-      count: 1
-    });
-  };
-
-  if (products === undefined) {
-    return <div className="min-h-screen bg-gray-50 p-8">Loading...</div>;
+  if (isLoading) {
+    return <LoadingState />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-          <Link href="/shops" className="text-blue-600 hover:underline mb-4 inline-block">
-            ← Back to Shops
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>
-          <p className="text-gray-600">Available products in this shop</p>
-        </header>
-
-        <main>
-          {products.length === 0 ? (
-            <p className="text-gray-500">No products available in this shop.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <div
-                  key={product._id}
-                  className="bg-white rounded-lg shadow-md p-6"
-                >
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    {product.name}
-                  </h2>
-                  <div className="mb-4">
-                    <p className="text-lg font-bold text-green-600">
-                      ${product.basePricePerUnit} per {product.unit}
-                    </p>
-                    <p className={`text-sm ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
-                      {product.inStock ? 'In Stock' : 'Out of Stock'}
-                    </p>
-                  </div>
-                  {product.inStock && (
-                    <button 
-                      onClick={() => handleAddToBasket(product._id)}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      Add to Basket
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </main>
-
-        {showCustomerForm && (
-          <CustomerForm
-            onClose={() => setShowCustomerForm(false)}
-            onSuccess={() => {}}
-          />
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-8 py-16">
+        {shop && <ShopHeader shop={shop} />}
+        
+        {products && products.length === 0 ? (
+          <EmptyProductsState />
+        ) : (
+          <div className="space-y-1">
+            {products?.map((product, index) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToBasket={handleAddToBasket}
+                isLast={index === products.length - 1}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

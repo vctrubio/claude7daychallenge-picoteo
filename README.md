@@ -29,12 +29,23 @@ This project is part of the incredible [Claude 7-Day Challenge](https://x.com/al
 
 ## 🗂 Database Schema
 
-Our application follows this comprehensive schema design (v1):
+Our application follows this comprehensive schema design (v2):
 
 ```mermaid
 erDiagram
+    USERS {
+        string id PK
+        string name
+        string email
+        string phone
+        string address
+        string role
+        number createdAt
+    }
+
     OWNERS {
         string id PK
+        string userId FK
         string name
         string email
         string phone
@@ -60,25 +71,16 @@ erDiagram
         number createdAt
     }
 
-    CUSTOMERS {
-        string id PK
-        string name
-        string phone
-        string email
-        string address
-        number createdAt
-    }
-
     BASKETS {
         string id PK
-        string customerId FK
+        string userId FK
         array products
         number finalPrice
     }
 
     ORDERS {
         string id PK
-        string customerId FK
+        string userId FK
         string basketId FK
         string shopId FK
         string status
@@ -86,10 +88,11 @@ erDiagram
         number createdAt
     }
 
+    USERS ||--o{ OWNERS : becomes
     OWNERS ||--o{ SHOPS : owns
     SHOPS ||--o{ PRODUCTS : contains
-    CUSTOMERS ||--o{ BASKETS : has
-    CUSTOMERS ||--o{ ORDERS : places
+    USERS ||--o{ BASKETS : has
+    USERS ||--o{ ORDERS : places
     BASKETS ||--o{ ORDERS : becomes
     SHOPS ||--o{ ORDERS : receives
 ```
