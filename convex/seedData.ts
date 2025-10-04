@@ -120,32 +120,6 @@ export const seedDatabase = mutation({
       }
     }
 
-    // Create baskets for customers with products
-    const baskets = [];
-    for (let i = 0; i < 5; i++) { // Create 5 customers with baskets
-      const customerUser = customerUsers[i];
-      
-      // Select 2-4 random products for basket
-      const basketProductCount = faker.number.int({ min: 2, max: 4 });
-      const selectedProducts = faker.helpers.arrayElements(allProducts, basketProductCount);
-      
-      const basketProducts = selectedProducts.map(product => ({
-        productId: product,
-        count: faker.number.int({ min: 1, max: 3 })
-      }));
-
-      const totalPrice = basketProducts.reduce((sum, item) => {
-        // We'll calculate this approximately since we don't have product details here
-        return sum + (faker.number.float({ min: 5, max: 50 }) * item.count);
-      }, 0);
-
-      const basket = await ctx.db.insert("baskets", {
-        userId: customerUser,
-        products: basketProducts,
-        finalPrice: totalPrice,
-      });
-      baskets.push(basket);
-    }
 
     // Create sample orders to test the checkout flow
     for (let i = 0; i < 3; i++) {
@@ -172,11 +146,11 @@ export const seedDatabase = mutation({
 
       await ctx.db.insert("orders", {
         userId: customerUser,
-        basketId: baskets[0], // Reference a basket (even if cleared)
         shopId: randomShop,
         status: faker.helpers.arrayElement(["proceeding", "complete"]),
         totalPriceToPay: totalPrice,
         products: orderProducts,
+        orderType: faker.helpers.arrayElement(["pickup", "stripe"]),
         createdAt: Date.now() - faker.number.int({ min: 86400000, max: 604800000 }), // 1-7 days ago
       });
     }
@@ -187,7 +161,6 @@ export const seedDatabase = mutation({
     - ${owners.length} owners
     - ${shops.length} shops
     - ${allProducts.length} products
-    - ${baskets.length} baskets
     - 3 sample orders`;
   },
 });
@@ -197,7 +170,7 @@ export const clearDatabase = mutation({
     tables: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const validTables = ["users", "owners", "shops", "products", "customers", "baskets", "orders"];
+    const validTables = ["users", "owners", "shops", "products", "customers", "orders"];
     const tablesToClear = args.tables.length === 0 ? validTables : args.tables.filter(table => validTables.includes(table));
     
     for (const tableName of tablesToClear) {

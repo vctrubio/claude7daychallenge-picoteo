@@ -19,7 +19,6 @@ export default function SeedNavBar() {
     { name: "shops", label: "Shops" },
     { name: "products", label: "Products" },
     { name: "customers", label: "Customers" },
-    { name: "baskets", label: "Baskets" },
     { name: "orders", label: "Orders" },
   ];
 

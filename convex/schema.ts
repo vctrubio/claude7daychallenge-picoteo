@@ -40,18 +40,8 @@ export default defineSchema({
   }),
 
 
-  baskets: defineTable({
-    userId: v.id("users"),
-    products: v.array(v.object({
-      productId: v.id("products"),
-      count: v.number(),
-    })),
-    finalPrice: v.number(),
-  }),
-
   orders: defineTable({
     userId: v.id("users"),
-    basketId: v.id("baskets"),
     shopId: v.id("shops"),
     status: v.union(v.literal("proceeding"), v.literal("complete")),
     totalPriceToPay: v.number(),
@@ -59,6 +49,7 @@ export default defineSchema({
       productId: v.id("products"),
       count: v.number(),
     })),
+    orderType: v.union(v.literal("pickup"), v.literal("stripe")),
     createdAt: v.number(),
   }),
 });

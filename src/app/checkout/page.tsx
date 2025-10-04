@@ -5,8 +5,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { handleBasketReceipt } from "../../lib/handleBasketReceipt";
-import { CreditCard, MessageCircle, Package, MapPin, User, ArrowLeft } from "lucide-react";
+import { handleOrderReceipt, sendWhatsAppMessage } from "../../lib/handleOrderReceipt";
+import { CreditCard, MessageCircle, Package, MapPin, User, ArrowLeft, X, Eye } from "lucide-react";
 import Link from "next/link";
 
 const useCheckoutLogic = () => {
@@ -15,6 +15,11 @@ const useCheckoutLogic = () => {
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'pickup' | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<{
+    receipt: string;
+    whatsappUrl: string;
+    orderId: string;
+  } | null>(null);
   
   // Parse URL params
   const ownerUsername = searchParams.get('owner');
@@ -40,21 +45,19 @@ const useCheckoutLogic = () => {
     setIsProcessing(true);
     
     try {
-      // Create order in database
-      const orderId = await createPickupOrder({
+      // Store data before clearing URL to prevent data loss
+      const orderData = {
         userId: user._id,
-        ownerId: owner._id,
         shopId: shop._id,
         products: products.map((p: any) => ({
           productId: p._id,
           count: p.quantity
         })),
         totalPriceToPay: total,
-        orderType: "pickup"
-      });
-      
-      // Send WhatsApp receipt to business owner
-      const receiptSent = await handleBasketReceipt({
+        orderType: "pickup" as const
+      };
+
+      const receiptData = {
         products,
         total,
         owner: {
@@ -65,14 +68,26 @@ const useCheckoutLogic = () => {
           name: user.name || 'Customer',
           phone: user.phone || 'No phone'
         },
-        orderType: 'pickup'
-      });
+        orderType: 'pickup' as const
+      };
       
-      if (receiptSent) {
-        // Redirect to success page (we'll create this)
-        router.push(`/order-success?orderId=${orderId}`);
+      // Create order in database
+      const orderId = await createPickupOrder(orderData);
+      
+      // Generate WhatsApp receipt preview
+      const receiptResult = await handleOrderReceipt(receiptData);
+      
+      if (receiptResult.success && receiptResult.receipt && receiptResult.whatsappUrl) {
+        // Show receipt preview
+        console.log('Setting receipt preview:', { orderId, hasReceipt: !!receiptResult.receipt });
+        setReceiptPreview({
+          receipt: receiptResult.receipt,
+          whatsappUrl: receiptResult.whatsappUrl,
+          orderId
+        });
       } else {
-        throw new Error('Failed to send receipt');
+        console.error('Receipt generation failed:', receiptResult);
+        throw new Error(receiptResult.error || 'Failed to generate receipt');
       }
       
     } catch (error) {
@@ -83,10 +98,72 @@ const useCheckoutLogic = () => {
     }
   };
 
+  const confirmOrderOnly = () => {
+    if (receiptPreview) {
+      // Clear URL params to prevent back button issues
+      router.replace('/checkout');
+      // Complete order without sending WhatsApp
+      router.push(`/order-success?orderId=${receiptPreview.orderId}`);
+    }
+  };
+
+  const confirmWithWhatsApp = () => {
+    if (receiptPreview) {
+      // Clear URL params to prevent back button issues
+      router.replace('/checkout');
+      sendWhatsAppMessage(receiptPreview.whatsappUrl);
+      router.push(`/order-success?orderId=${receiptPreview.orderId}`);
+    }
+  };
+
   const handleStripePayment = async () => {
-    // TODO: Implement Stripe payment
-    console.log('Stripe payment not implemented yet');
-    alert('Stripe payment will be implemented tomorrow!');
+    if (!user || !owner || !shop) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Create order in database
+      const orderId = await createPickupOrder({
+        userId: user._id,
+        shopId: shop._id,
+        products: products.map((p: any) => ({
+          productId: p._id,
+          count: p.quantity
+        })),
+        totalPriceToPay: total,
+        orderType: "stripe"
+      });
+      
+      // Handle Stripe payment transaction
+      const { handleOrderTransaction } = await import('../../lib/handleOrderTransaction');
+      
+      const result = await handleOrderTransaction({
+        orderId,
+        products,
+        total,
+        owner: {
+          username: owner.username,
+          whatsappApiTlf: owner.whatsappApiTlf
+        },
+        customer: {
+          name: user.name || 'Customer',
+          phone: user.phone || 'No phone'
+        }
+      });
+      
+      if (result.success) {
+        // Redirect to success page
+        router.push(`/order-success?orderId=${orderId}`);
+      } else {
+        throw new Error(result.error || 'Payment failed');
+      }
+      
+    } catch (error) {
+      console.error('Failed to process Stripe payment:', error);
+      alert('Payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return {
@@ -100,7 +177,11 @@ const useCheckoutLogic = () => {
     isProcessing,
     handlePickupOrder,
     handleStripePayment,
-    ownerUsername
+    ownerUsername,
+    receiptPreview,
+    confirmOrderOnly,
+    confirmWithWhatsApp,
+    setReceiptPreview
   };
 };
 
@@ -236,6 +317,83 @@ const PaymentMethods = ({
   </div>
 );
 
+const ReceiptPreview = ({ 
+  receiptPreview, 
+  onConfirmOnly,
+  onConfirmWithWhatsApp,
+  onCancel 
+}: {
+  receiptPreview: {
+    receipt: string;
+    whatsappUrl: string;
+    orderId: string;
+  };
+  onConfirmOnly: () => void;
+  onConfirmWithWhatsApp: () => void;
+  onCancel: () => void;
+}) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+            <Eye className="w-5 h-5 text-emerald-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Order Created - Receipt Preview</h2>
+        </div>
+        <button
+          onClick={onCancel}
+          className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+        >
+          <X className="w-4 h-4 text-gray-600" />
+        </button>
+      </div>
+      
+      <div className="bg-gray-50 rounded-lg p-4 mb-6 overflow-y-auto flex-1">
+        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+          {receiptPreview.receipt}
+        </pre>
+      </div>
+      
+      <div className="space-y-3">
+        <p className="text-sm text-gray-600 text-center">
+          Your order has been created successfully. Choose how to proceed:
+        </p>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            Cancel
+          </button>
+          
+          <button
+            onClick={onConfirmOnly}
+            className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+          >
+            ✅ Complete Order
+          </button>
+          
+          <button
+            onClick={onConfirmWithWhatsApp}
+            className="flex-1 bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Send WhatsApp
+          </button>
+        </div>
+        
+        <div className="text-xs text-gray-500 space-y-1">
+          <p>• <strong>Complete Order:</strong> Finish without sending WhatsApp notification</p>
+          <p>• <strong>Send WhatsApp:</strong> Open WhatsApp with pre-filled message to shop owner</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 function CheckoutPageContent() {
   const {
     user,
@@ -248,7 +406,11 @@ function CheckoutPageContent() {
     isProcessing,
     handlePickupOrder,
     handleStripePayment,
-    ownerUsername
+    ownerUsername,
+    receiptPreview,
+    confirmOrderOnly,
+    confirmWithWhatsApp,
+    setReceiptPreview
   } = useCheckoutLogic();
 
   if (!user) {
@@ -344,6 +506,19 @@ function CheckoutPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Receipt Preview Modal */}
+      {receiptPreview && (
+        <>
+          {console.log('Rendering receipt preview modal:', receiptPreview)}
+          <ReceiptPreview
+            receiptPreview={receiptPreview}
+            onConfirmOnly={confirmOrderOnly}
+            onConfirmWithWhatsApp={confirmWithWhatsApp}
+            onCancel={() => setReceiptPreview(null)}
+          />
+        </>
+      )}
     </div>
   );
 }
